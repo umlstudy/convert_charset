@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="jaret util">
+  <bannerLeft>
+    <name>jaret util</name>
+    <src>jaret_web.jpg</src>
+    <href>http://www.jaret.de/</href>
+  </bannerLeft>
+<!--    <bannerRight>
+    <src>http://maven.apache.org/images/maven-small.gif</src>
+  </bannerRight>
+-->  <body>
+    <links>
+       <item name="jaret" href="http://www.jaret.de/" />
+      <item name="geexel" href="http://www.geexel.de/"/>
+   </links>
+
+    <menu name="jaretutil">
+      <item name="overview" href="index.html"/>      
+      <item name="screenshots" href="util_screenshots.html"/>      
+      <item name="changelog" href="changelog.html"/>      
+    </menu>
+<menu name="impressumB">
+   <item name="impressum" href="../impressum.html"/>      
+ </menu>
+
+<menu ref="reports"/>
+
+  </body>
+</project>

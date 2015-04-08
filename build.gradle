@@ -1,0 +1,47 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+
+mainClassName = 'com.krx.chcp.Chcp'
+
+project.group='com.krx.extureplus'
+project.version = '1.0'
+archivesBaseName = "chcp"
+manifest.mainAttributes("Main-Class" : "$mainClassName")
+
+repositories {
+	maven { url 'https://swt-repo.googlecode.com/svn/repo/' }
+	mavenLocal()
+	mavenCentral()
+}
+
+dependencies {
+   compile 'commons-lang:commons-lang:2.6'
+   compile 'log4j:log4j:1.2.17'
+   compile 'commons-io:commons-io:2.4'
+   compile('org.eclipse.swt:org.eclipse.swt.win32.win32.x86_64:3.8')
+   compile('org.eclipse.jface:org.eclipse.jface:3.8.0.v20120521-2329')
+   testCompile 'junit:junit:4.12'
+}
+
+sourceCompatibility = 1.6
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+// source download
+eclipse {
+	classpath {
+	       downloadSources=true
+	       downloadJavadoc=true
+	}
+}
+
+task initProject(description: 'initialize project') << {
+    createDir = {
+        println "create source directory: $it"
+        it.mkdirs()
+    }
+    sourceSets*.java.srcDirs*.each createDir
+    sourceSets*.resources.srcDirs*.each createDir
+}

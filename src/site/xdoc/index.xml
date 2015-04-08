@@ -1,0 +1,64 @@
+<document>
+	<properties>
+		<author email="peter.kliem@jaret.de">Peter Kliem</author>
+		<title>jaret.util</title>
+	</properties>
+	<head>
+		<meta name="keywords" content="SWT, holiday enumeration, utilities, date calculations, java"/>
+	</head>
+	<body>
+		<section name="de.jaret.util">
+			<p>
+		The jaret utils are a collection of helper classes for the jaret project. These are needed by all other jaret components. The utils are 
+		<b>subject to frequent changes</b> since they collect everything factored out of the other jaret parts. 
+		There are simple widgets within the util package. See screenshots <a href="../util_screenshots.html">here</a>.
+		</p>
+			<p>
+		The utilities include:
+		<ul>
+					<li>
+ 			several date and time utilities including a holiday enumerator to enumerate the holidays for a specific locale. The realisation of the
+ 			enumerator is not yet completed ... more countries to come. 
+ 		</li>
+					<li>
+  			a simple SWT console widget
+  		</li>
+		<li>
+			two simple list composer widgets (classic and csv)
+  		</li>
+				</ul>
+			</p>
+			<subsection name="Licensing">
+				<p>
+			The package is licensed under the Common Public License 1.0 (CPL 1.0) (see <a href="LICENSE.html">LICENSE</a>) allowing
+			the usage in other free projects and usage in commercial projects as long as the license is obeyed. Optional you can use the package
+			under the GPL.
+			If you are interested in a commercial license contact info@jaret.de.
+		</p>
+			</subsection>
+			<subsection name="Download / javadoc">
+				<p>
+			There are several different packages available for download:
+		</p>
+				<table>
+					<tr>
+						<td>
+							<a href="data/jaretutil-0.32-bin.zip">jaretutil-0.32-bin.zip</a>
+						</td>
+						<td>
+						Contains ready built jar.
+					</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="data/jaretutil-0.32-src.zip">jaretutil-0.32-src.zip</a>
+						</td>
+						<td>
+						Contains the complete project. 
+					</td>
+					</tr>
+				</table>
+			</subsection>
+		</section>
+	</body>
+</document>
