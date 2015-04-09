@@ -20,6 +20,7 @@ dependencies {
    compile 'commons-lang:commons-lang:2.6'
    compile 'log4j:log4j:1.2.17'
    compile 'commons-io:commons-io:2.4'
+   compile 'com.ibm.icu:icu4j:55.1'
    compile('org.eclipse.swt:org.eclipse.swt.win32.win32.x86_64:3.8')
    compile('org.eclipse.jface:org.eclipse.jface:3.8.0.v20120521-2329')
    testCompile 'junit:junit:4.12'

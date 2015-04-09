@@ -34,9 +34,15 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
+
 public class Chcp {
 	
+	private static final String TARGET_ENCODING_TYPE="EUC-KR";
+	
 	private boolean overwriteAll = false;
+	private boolean overwriteAllIgnoreOriginalEncoding = false;
 	private int totalCnt = 0;
 	private int failCnt = 0;
 	private List<String> failFiles = new ArrayList<String>();
@@ -49,7 +55,7 @@ public class Chcp {
 
 		Composite composite = new Composite(shell, SWT.NONE);
 		createUI(composite);
-		shell.setText("KSC5601 -> UTF-8 변환기");
+		shell.setText(TARGET_ENCODING_TYPE + " 변환기");
 		shell.open();
 
 		while (!shell.isDisposed()) {
@@ -123,6 +129,7 @@ public class Chcp {
 			public void widgetSelected(SelectionEvent e) {
 				
 				overwriteAll = false;
+				overwriteAllIgnoreOriginalEncoding = false;
 				totalCnt = 0;
 				failCnt = 0;
 				failFiles.clear();
@@ -190,8 +197,8 @@ public class Chcp {
 								error(console, msg);
 								
 								try {
-									String content = readFile(file, "KSC5601");
-									boolean write = writeFile(outFile, content, "UTF-8");
+									String content = readFile(file, TARGET_ENCODING_TYPE);
+									boolean write = writeFile(outFile, content, TARGET_ENCODING_TYPE);
 									if ( !write ) {
 										failCnt ++;
 										failFiles.add(file.getPath());
@@ -200,6 +207,10 @@ public class Chcp {
 								} catch ( AbortException e ) {
 									error(console, e);
 									monitor.setCanceled(true);
+								} catch (SameEncodingTypeException e) {
+									failCnt++;
+									failFiles.add(file.getPath());
+									error(console, " " + file.getPath() + " 는 변경하려는 인코딩 타입(" + e.getMessage() +")과 동일합니다. 파일을 생성하지 않습니다.");
 								} catch ( ChcpException e ) {
 									failCnt++;
 									failFiles.add(file.getPath());
@@ -252,7 +263,7 @@ public class Chcp {
 		});
 	}
 	
-	private String readFile(File file, String charset) throws ChcpException {
+	private String readFile(final File file, String targetCharset) throws ChcpException, AbortException, SameEncodingTypeException {
 		InputStream in = null;
 		try {
 			in = new FileInputStream(file);
@@ -267,7 +278,45 @@ public class Chcp {
 				total += result;
 			}
 			
-			return new String(b, charset);
+			CharsetDetector detector;
+			CharsetMatch match;
+			detector = new CharsetDetector();
+			detector.setText(b);
+			match = detector.detect();
+			if ( TARGET_ENCODING_TYPE.equals(match.getName()) ) {
+				if ( !overwriteAllIgnoreOriginalEncoding ) {
+					final Display display = Display.getDefault();
+					final ObjectOwner confirmObject = new ObjectOwner();
+					display.syncExec(new Runnable() {
+						@Override
+						public void run() {
+
+							MessageDialog dialog = new MessageDialog(display.getActiveShell(),
+									"확인",
+									null,
+									String.format("변경하려는 인코딩 타입과 동일합니다. 파일을 생성합니까?\n(%s)", file.getPath()),
+									MessageDialog.QUESTION_WITH_CANCEL,
+									new String[] { "예", "아니오", "종료" },
+									0);
+							int confirm = dialog.open();
+							if ( confirm == 0 ) {
+								overwriteAllIgnoreOriginalEncoding = MessageDialog.openConfirm(display.getActiveShell(), 
+										"확인",
+										String.format("이 후 모든 파일에 대해 변경하려는 인코딩 타입과 동일해도 덮어쓰시겠습니까?\n(%s)", file.getPath()));
+							}
+							confirmObject.setObject(confirm);
+						}
+					});
+					
+					if ( (Integer)confirmObject.getObject() == 2 ) {
+						throw new AbortException("작업을 중단하였습니다.");
+					}
+					if ( (Integer)confirmObject.getObject() != 0 ) {
+						throw new SameEncodingTypeException(TARGET_ENCODING_TYPE);
+					}
+				}
+			}
+			return match.getString();
 		} catch ( IOException e ) {
 			throw new ChcpException(e);
 		} finally {
