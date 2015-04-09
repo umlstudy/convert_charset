@@ -36,6 +36,11 @@ import org.eclipse.swt.widgets.Text;
 
 public class Chcp {
 	
+	private boolean overwriteAll = false;
+	private int totalCnt = 0;
+	private int failCnt = 0;
+	private List<String> failFiles = new ArrayList<String>();
+	
 	public void open() {
 		Display display = new Display();
 		final Shell shell = new Shell();
@@ -116,6 +121,12 @@ public class Chcp {
 	    convert.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
+				overwriteAll = false;
+				totalCnt = 0;
+				failCnt = 0;
+				failFiles.clear();
+				
 				final File targetPathFile = new File(targetPath.getText());
 				if ( !targetPathFile.isDirectory() ) {
 					String msg = String.format("대상경로\'%s\'는 유효한 디렉토리이어야 합니다.", targetPath.getText());
@@ -166,6 +177,7 @@ public class Chcp {
 							monitor.beginTask("대상파일을 변경 중 ...", targetFiles.size());
 							int idx = 1;
 							for ( File file : targetFiles ) {
+								totalCnt ++;
 								if ( monitor.isCanceled() ) {
 									error(console, "취소되었습니다.");
 									return;
@@ -181,23 +193,39 @@ public class Chcp {
 									String content = readFile(file, "KSC5601");
 									boolean write = writeFile(outFile, content, "UTF-8");
 									if ( !write ) {
+										failCnt ++;
+										failFiles.add(file.getPath());
 										error(console, String.format("** %s 은 변환하지 않음", outFile.getPath()));
 									}
-								} catch ( ChcpException e ) {
+								} catch ( AbortException e ) {
 									error(console, e);
+									monitor.setCanceled(true);
+								} catch ( ChcpException e ) {
+									failCnt++;
+									failFiles.add(file.getPath());
+									error(console, e);
+									e.printStackTrace();
 								}
 								Thread.sleep(100);
 								monitor.worked(1);
 							}
 						}
 					});
+					
+					error(console, "변환이 완료되었습니다.");
+					
 				} catch ( Exception ex ) {
 					error(console, ex);
 					error(console, "에러로 인하여 중단합니다.");
 					ex.printStackTrace();
 				}
 				
-				error(console, "변환이 완료되었습니다.");
+				error(console, "총 대상 파일 : " + totalCnt);
+				error(console, "총 변환 실패 파일 : " + failCnt);
+				error(console, "총 변환 실패 파일 목록 : ");
+				for ( String fileName : failFiles) {
+					error(console, " " + fileName);
+				}
 			}
 		});
 	}
@@ -247,28 +275,49 @@ public class Chcp {
 		}
 	}
 
-	private boolean writeFile(final File file, String content, String charset) throws ChcpException {
+	private boolean writeFile(final File file, String content, String charset) throws ChcpException, AbortException {
 		OutputStream out = null;
 		try {
 			if ( file.exists() ) {
-				final Display display = Display.getDefault();
-				final ObjectOwner confirmObject = new ObjectOwner();
-				display.syncExec(new Runnable() {
-					@Override
-					public void run() {
-						boolean confirm = MessageDialog.openConfirm(display.getActiveShell(), 
-								"확인", 
-								String.format("파일이 이미 존재합니다. 덮어 쓰시겠습니까?\n(%s)", file.getPath()));
-						confirmObject.setObject(confirm);
+
+				if ( !overwriteAll ) {
+					final Display display = Display.getDefault();
+					final ObjectOwner confirmObject = new ObjectOwner();
+					display.syncExec(new Runnable() {
+						@Override
+						public void run() {
+
+							MessageDialog dialog = new MessageDialog(display.getActiveShell(),
+									"확인",
+									null,
+									String.format("파일이 이미 존재합니다. 덮어 쓰시겠습니까?\n(%s)", file.getPath()),
+									MessageDialog.QUESTION_WITH_CANCEL,
+									new String[] { "예", "아니오", "종료" },
+									0);
+							int confirm = dialog.open();
+							if ( confirm == 0 ) {
+								overwriteAll = MessageDialog.openConfirm(display.getActiveShell(), 
+										"확인",
+										String.format("이 후 모든 파일도 덮어쓰시겠습니까?\n(%s)", file.getPath()));
+							}
+							confirmObject.setObject(confirm);
+						}
+					});
+					
+					if ( (Integer)confirmObject.getObject() == 2 ) {
+						throw new AbortException("작업을 중단하였습니다.");
 					}
-				});
-				
-				if ( !(Boolean)confirmObject.getObject() ) {
-					return false;
+					if ( (Integer)confirmObject.getObject() != 0 ) {
+						return false;
+					}
 				}
-			} else {
-				file.createNewFile();
 			}
+			
+			File parent = file.getParentFile();
+			if ( !parent.exists() ) {
+				parent.mkdirs();
+			}
+			file.createNewFile();
 			
 			out = new FileOutputStream(file);
 			out = new BufferedOutputStream(out);
