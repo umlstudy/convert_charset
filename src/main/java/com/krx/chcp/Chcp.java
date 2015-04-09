@@ -39,7 +39,7 @@ import com.ibm.icu.text.CharsetMatch;
 
 public class Chcp {
 	
-	private static final String TARGET_ENCODING_TYPE="EUC-KR";
+	private static final String TARGET_ENCODING_TYPE="UTF-8";
 	
 	private boolean overwriteAll = false;
 	private boolean overwriteAllIgnoreOriginalEncoding = false;
@@ -205,6 +205,8 @@ public class Chcp {
 										error(console, String.format("** %s 은 변환하지 않음", outFile.getPath()));
 									}
 								} catch ( AbortException e ) {
+									failCnt++;
+									failFiles.add(file.getPath());
 									error(console, e);
 									monitor.setCanceled(true);
 								} catch (SameEncodingTypeException e) {
@@ -263,7 +265,7 @@ public class Chcp {
 		});
 	}
 	
-	private String readFile(final File file, String targetCharset) throws ChcpException, AbortException, SameEncodingTypeException {
+	private String readFile(final File file, final String targetCharset) throws ChcpException, AbortException, SameEncodingTypeException {
 		InputStream in = null;
 		try {
 			in = new FileInputStream(file);
@@ -283,7 +285,8 @@ public class Chcp {
 			detector = new CharsetDetector();
 			detector.setText(b);
 			match = detector.detect();
-			if ( TARGET_ENCODING_TYPE.equals(match.getName()) ) {
+			final String oriEncType = match.getName();
+			if ( TARGET_ENCODING_TYPE.equals(oriEncType) ) {
 				if ( !overwriteAllIgnoreOriginalEncoding ) {
 					final Display display = Display.getDefault();
 					final ObjectOwner confirmObject = new ObjectOwner();
@@ -294,7 +297,7 @@ public class Chcp {
 							MessageDialog dialog = new MessageDialog(display.getActiveShell(),
 									"확인",
 									null,
-									String.format("변경하려는 인코딩 타입과 동일합니다. 파일을 생성합니까?\n(%s)", file.getPath()),
+									String.format("%s\n위 파일의 인코딩 타입 분석 결과, 변경하려는 인코딩 타입(%s)과 동일합니다.\n지정한 폴더는 이미 인코딩 타입 변경작업을 완료한 폴더일 가능성이 있습니다.\n프로그램을 종료하고 해당 폴더의 파일을 직접 검토해 보시기 바랍니다.\n(원본 파일의 인코딩 분석결과는 95%%이상 신뢰할 수 있음)\n파일을 생성합니까?", file.getPath(), targetCharset),
 									MessageDialog.QUESTION_WITH_CANCEL,
 									new String[] { "예", "아니오", "종료" },
 									0);
